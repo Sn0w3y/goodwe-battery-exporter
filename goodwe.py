@@ -11,6 +11,13 @@ def decrypt_data(key, iv, data):
     decrypted_data = decryptor.update(data) + decryptor.finalize()
     return decrypted_data
 
+def forward_data(data, forward_ip, forward_port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as forward_sock:
+        forward_sock.connect((forward_ip, forward_port))
+        forward_sock.sendall(data)
+        # Optionally receive a response
+        response = forward_sock.recv(1024)
+        return response
 
 def handle_connection(connection):
     try:
@@ -29,6 +36,10 @@ def handle_connection(connection):
             data_size = int.from_bytes(data_size_bytes, 'big')
             data = connection.recv(data_size - 41)  # Read the data part
             crc = connection.recv(2)  # Read the CRC
+
+            # Forward the raw packet data before processing
+            response = forward_data(header + data + crc, 'tcp.goodwe-power.com', 20001)
+            print(f"Forwarded data to tcp-goodwe-power.com, received response: {response.hex()}")
 
             year, month, day, hour, minute, second = timestamp
 
