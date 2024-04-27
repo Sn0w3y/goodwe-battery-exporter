@@ -1,121 +1,102 @@
 #!/usr/bin/env python3
 import socket
+import logging
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
+# Configuration Constants
+FORWARD_IP = 'tcp.goodwe-power.com'
+FORWARD_PORT = 20001
+LISTEN_IP = '0.0.0.0'
+LISTEN_PORT = 20001
+HEADER_LENGTH = 52
+AES_KEY = b'\xFF' * 16  # Security note: This should be generated and stored securely
 
-# Temp is a 491 with length of 3 in Decicelsius
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def hex_to_celsius(hex_data):
-    hex_value = hex_data[491:491 + 3]
-
-    # Convert the hex value to an integer
+    """Convert hexadecimal temperature from deci-Celsius to Celsius."""
+    hex_value = hex_data[491:494]
     temp_deci_celsius = int(hex_value, 16)
-
-    # Convert from deci-Celsius to Celsius
-    temp_celsius = temp_deci_celsius / 10
-
-    return temp_celsius
+    return temp_deci_celsius / 10
 
 
 def hex_to_soc(hex_data):
-    hex_value = hex_data[1238:1238 + 4]
-
-    # Convert the hex value to an integer
-    soc = int(hex_value, 16)
-
-    return soc
+    """Convert hexadecimal state of charge to integer percentage."""
+    hex_value = hex_data[1238:1242]
+    return int(hex_value, 16)
 
 
 def hex_to_volt(hex_data):
-    # Currently not correct !
-    # hex_value = hex_data[1034:1034 + 8]  # Multiply by 2 for the same reason
-
-    # return f"{int(hex_value, 16)}V"
+    """Placeholder for voltage conversion."""
     return "ToDo"
 
 
 def decrypt_data(key, iv, data):
-    backend = default_backend()
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=backend)
+    """Decrypt data using AES-CBC."""
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     decryptor = cipher.decryptor()
-    decrypted_data = decryptor.update(data) + decryptor.finalize()
-    return decrypted_data
+    return decryptor.update(data) + decryptor.finalize()
 
 
-def forward_data(data, forward_ip, forward_port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as forward_sock:
-        forward_sock.connect((forward_ip, forward_port))
-        forward_sock.sendall(data)
-        # Optionally receive a response
-        response = forward_sock.recv(1024)
-        return response
+def forward_data(data):
+    """Forward data to predefined IP and port, and return the response."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.connect((FORWARD_IP, FORWARD_PORT))
+        sock.sendall(data)
+        return sock.recv(1024)
 
 
 def handle_connection(connection):
+    """Handle incoming connections and process data."""
     try:
         while True:
-            header = connection.recv(52)  # Attempt to read the header
-            if len(header) < 52:
-                break  # End of data or incomplete header
+            header = connection.recv(HEADER_LENGTH)
+            if len(header) < HEADER_LENGTH:
+                break
 
             magic, data_size_bytes, unknown, serial_number, iv, timestamp = \
                 header[:6], header[6:10], header[10:14], header[14:30], header[30:46], header[46:52]
 
             if magic.decode() != "POSTGW":
-                print("Error: File does not start with the expected magic value.")
+                logging.error("Invalid magic value.")
                 continue
 
             data_size = int.from_bytes(data_size_bytes, 'big')
-            data = connection.recv(data_size - 41)  # Read the data part
-            crc = connection.recv(2)  # Read the CRC
+            data = connection.recv(data_size - 41)
+            crc = connection.recv(2)
 
-            # Forward the raw packet data before processing
-            response = forward_data(header + data + crc, 'tcp.goodwe-power.com', 20001)
-            print(f"Forwarded data to tcp-goodwe-power.com, received response: {response.hex()}")
+            response = forward_data(header + data + crc)
+            logging.info(f"Forwarded data, received response: {response.hex()}")
 
-            year, month, day, hour, minute, second = timestamp
+            decrypted_data = decrypt_data(AES_KEY, iv, data)
 
-            print(f"magic   : {magic.decode()}")
-            print(f"data_sz : {data_size}")
-            print(f"unknown : {unknown.hex()}")
-            print(f"s/n     : {serial_number.decode()}")
-            print(f"iv      : {iv.hex()}")
-            print(f"time    : {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
-
-            key = b'\xFF' * 16
-            decrypted_data = decrypt_data(key, iv, data)
-
-            print("data    :", decrypted_data.hex())
-            print("crc     :", crc.hex())
-            print(f"temp   : {hex_to_celsius(decrypted_data.hex())}°C")
-            print(f"soc   : {hex_to_soc(decrypted_data.hex())}%")
-            print(f"volt   : {hex_to_volt(decrypted_data.hex())}")
-
-            print()
+            logging.info(f"Temperature: {hex_to_celsius(decrypted_data.hex())}°C")
+            logging.info(f"State of Charge: {hex_to_soc(decrypted_data.hex())}%")
+            logging.info(f"Voltage: {hex_to_volt(decrypted_data.hex())}")
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logging.error(f"An error occurred: {e}")
     finally:
         connection.close()
 
 
-def listen_on_port(ip, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((ip, port))
-    sock.listen(5)
-    print(f"Listening on {ip}:{port}")
-
-    try:
-        while True:
-            connection, addr = sock.accept()
-            print(f"Connected by {addr}")
-            handle_connection(connection)
-    except KeyboardInterrupt:
-        print("Server shutting down.")
-    finally:
-        sock.close()
+def listen_on_port():
+    """Listen on a specified port and handle connections."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind((LISTEN_IP, LISTEN_PORT))
+        sock.listen(5)
+        logging.info(f"Listening on {LISTEN_IP}:{LISTEN_PORT}")
+        try:
+            while True:
+                connection, addr = sock.accept()
+                logging.info(f"Connected by {addr}")
+                handle_connection(connection)
+        except KeyboardInterrupt:
+            logging.info("Server shutting down.")
 
 
 if __name__ == "__main__":
-    listen_on_port('0.0.0.0', 20001)
+    listen_on_port()
