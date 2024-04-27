@@ -3,6 +3,18 @@ import socket
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
+# Temp is a 491 with length of 3 in Decicelsius
+
+def hex_to_celsius(hex_data):
+    hex_value = hex_data[491:491 + 3]
+
+    # Convert the hex value to an integer
+    temp_deci_celsius = int(hex_value, 16)
+
+    # Convert from deci-Celsius to Celsius
+    temp_celsius = temp_deci_celsius / 10
+
+    return temp_celsius
 
 def decrypt_data(key, iv, data):
     backend = default_backend()
@@ -55,6 +67,7 @@ def handle_connection(connection):
 
             print("data    :", decrypted_data.hex())
             print("crc     :", crc.hex())
+            print(f"temp   : {hex_to_celsius(decrypted_data.hex())}°C")
             print()
 
     except Exception as e:
