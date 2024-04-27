@@ -3,6 +3,7 @@ import socket
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
+
 # Temp is a 491 with length of 3 in Decicelsius
 
 def hex_to_celsius(hex_data):
@@ -16,12 +17,31 @@ def hex_to_celsius(hex_data):
 
     return temp_celsius
 
+
+def hex_to_soc(hex_data):
+    hex_value = hex_data[1238:1238 + 4]
+
+    # Convert the hex value to an integer
+    soc = int(hex_value, 16)
+
+    return soc
+
+
+def hex_to_volt(hex_data):
+    # Currently not correct !
+    # hex_value = hex_data[1034:1034 + 8]  # Multiply by 2 for the same reason
+
+    # return f"{int(hex_value, 16)}V"
+    return "ToDo"
+
+
 def decrypt_data(key, iv, data):
     backend = default_backend()
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=backend)
     decryptor = cipher.decryptor()
     decrypted_data = decryptor.update(data) + decryptor.finalize()
     return decrypted_data
+
 
 def forward_data(data, forward_ip, forward_port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as forward_sock:
@@ -30,6 +50,7 @@ def forward_data(data, forward_ip, forward_port):
         # Optionally receive a response
         response = forward_sock.recv(1024)
         return response
+
 
 def handle_connection(connection):
     try:
@@ -68,6 +89,9 @@ def handle_connection(connection):
             print("data    :", decrypted_data.hex())
             print("crc     :", crc.hex())
             print(f"temp   : {hex_to_celsius(decrypted_data.hex())}°C")
+            print(f"soc   : {hex_to_soc(decrypted_data.hex())}%")
+            print(f"volt   : {hex_to_volt(decrypted_data.hex())}")
+
             print()
 
     except Exception as e:
