@@ -26,9 +26,13 @@ def hex_to_soc(hex_data):
     hex_value = hex_data[1238:1242]
     return int(hex_value, 16)
 
-def hex_to_volt(hex_data):
-    """Placeholder for voltage conversion."""
-    return "ToDo"
+def hex_to_battery_volt(hex_data):
+    """Convert hexadecimal battery voltage to volts."""
+    hex_value = hex_data[514:518]
+
+    voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
+
+    return voltage
 
 def decrypt_data(key, iv, data):
     """Decrypt data using AES-CBC."""
@@ -68,12 +72,14 @@ def handle_connection(connection):
 
             decrypted_data = decrypt_data(AES_KEY, iv, data)
 
+            print(decrypted_data.hex())
+
             logging.info("---------------------------------------------------------")
 
             logging.info(f"Date-Time: {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
             logging.info(f"Temperature: {hex_to_celsius(decrypted_data.hex())}°C")
             logging.info(f"State of Charge: {hex_to_soc(decrypted_data.hex())}%")
-            logging.info(f"Voltage: {hex_to_volt(decrypted_data.hex())}")
+            logging.info(f"Voltage of Battery: {hex_to_battery_volt(decrypted_data.hex())}V")
 
             logging.info("---------------------------------------------------------")
 
