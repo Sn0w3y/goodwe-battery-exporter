@@ -61,17 +61,21 @@ def handle_connection(connection):
             data_size = int.from_bytes(data_size_bytes, 'big')
             data = connection.recv(data_size - 41)
             crc = connection.recv(2)
+            year, month, day, hour, minute, second = [int(x) for x in timestamp]
 
             response = forward_data(header + data + crc)
             logging.info(f"Forwarded data, received response: {response.hex()}")
 
             decrypted_data = decrypt_data(AES_KEY, iv, data)
 
-            year, month, day, hour, minute, second = [int(x) for x in timestamp]
+            logging.info("---------------------------------------------------------")
+
             logging.info(f"Date-Time: {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
             logging.info(f"Temperature: {hex_to_celsius(decrypted_data.hex())}°C")
             logging.info(f"State of Charge: {hex_to_soc(decrypted_data.hex())}%")
             logging.info(f"Voltage: {hex_to_volt(decrypted_data.hex())}")
+
+            logging.info("---------------------------------------------------------")
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
