@@ -48,7 +48,7 @@ def handle_connection(connection):
             print(f"unknown : {unknown.hex()}")
             print(f"s/n     : {serial_number.decode()}")
             print(f"iv      : {iv.hex()}")
-            print(f"time    : {2000 + year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
+            print(f"time    : {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
 
             key = b'\xFF' * 16
             decrypted_data = decrypt_data(key, iv, data)
