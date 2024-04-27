@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import socket
-import struct
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
+
 
 def decrypt_data(key, iv, data):
     backend = default_backend()
@@ -11,34 +11,6 @@ def decrypt_data(key, iv, data):
     decrypted_data = decryptor.update(data) + decryptor.finalize()
     return decrypted_data
 
-def parse_meter_metrics(data):
-    fmt = '<7s I 2s I 8s I 2s I 16s h I h h h I I I I I 21s'
-    fields = struct.unpack_from(fmt, data)
-    metrics = {
-        "PacketType": fields[0],
-        "EnergyExportDecawattHoursTotal": fields[1],
-        "UnknownBytes1": fields[2],
-        "EnergyGenerationDecawattHoursTotal": fields[3],
-        "UnknownBytes2": fields[4],
-        "SumOfEnergyGenerationAndExportDecawattHoursTotal": fields[5],
-        "UnknownBytes3": fields[6],
-        "EnergyImportDecawattHoursTotal": fields[7],
-        "UnknownBytes4": fields[8],
-        "SumOfEnergyImportLessGenerationDecawattHoursTotal": fields[9],
-        "UnknownInt5": fields[10],
-        "UnknownInt6": fields[11],
-        "UnknownInt7": fields[12],
-        "UnknownInt8": fields[13],
-        "UnknownInt9": fields[14],
-        "UnknownInt10": fields[15],
-        "UnknownInt11": fields[16],
-        "PowerExportWatts": fields[17],
-        "PowerGenerationWatts": fields[18],
-        "UnknownInt12": fields[19],
-        "SumOfPowerGenerationAndExportWatts": fields[20],
-        "UnknownBytes5": fields[21]
-    }
-    return metrics
 
 def handle_connection(connection):
     try:
@@ -70,8 +42,7 @@ def handle_connection(connection):
             key = b'\xFF' * 16
             decrypted_data = decrypt_data(key, iv, data)
 
-            metrics = parse_meter_metrics(decrypted_data)
-            print("Decrypted Data Metrics:", metrics)
+            print("data    :", decrypted_data.hex())
             print("crc     :", crc.hex())
             print()
 
@@ -79,6 +50,7 @@ def handle_connection(connection):
         print(f"An error occurred: {e}")
     finally:
         connection.close()
+
 
 def listen_on_port(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -95,6 +67,7 @@ def listen_on_port(ip, port):
         print("Server shutting down.")
     finally:
         sock.close()
+
 
 if __name__ == "__main__":
     listen_on_port('0.0.0.0', 20001)
