@@ -16,7 +16,6 @@ The SEMS GoodWe exporter has the following advantages over just using the SEMS P
 * Allows you to store your data in a Prometheus instance that you control.
 * Visualise your data using standard tools like Grafana.
 * Because you connect your HF-LPB100 (GoodWe WiFi or LAN Dongle to the Script nothing can reach the Inverter - afaik. So Updates etc. do not reach it)
-* Summons Batman to the SEMS Portal (optional, set env var `BATSIGNAL=true`).
 
 ### Hardware support
 
