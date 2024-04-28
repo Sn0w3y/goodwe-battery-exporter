@@ -5,7 +5,7 @@ from encryption import *
 from log_config import *
 import logging
 
-setup_logging()  # This sets up the logging based on the configuration specified in log_config.py
+setup_logging()
 
 
 def handle_connection(connection):
