@@ -69,6 +69,6 @@ def hex_to_MPP1(hex_data):
 
 def hex_to_MPP2(hex_data):
     """Convert hexadecimal MPPT2 to volts."""
-    hex_value = hex_data[250:254]  # Extract the next two bytes after MPP1
+    hex_value = hex_data[250:254]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
