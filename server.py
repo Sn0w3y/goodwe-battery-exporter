@@ -1,9 +1,8 @@
-import socket
-from config import LISTEN_IP, LISTEN_PORT, HEADER_LENGTH, AES_KEY, FORWARD_ENABLED
+from config import *
 from conversion_utils import *
-from networking import forward_data
-from encryption import decrypt_data
-from log_config import setup_logging
+from networking import *
+from encryption import *
+from log_config import *
 import logging
 
 setup_logging()  # This sets up the logging based on the configuration specified in log_config.py
