@@ -80,14 +80,14 @@ def hex_to_grid_volt_l3(hex_data):
 
 def hex_to_MPP1(hex_data):
     """Convert hexadecimal MPPT1 to volts."""
-    hex_value = hex_data[250:254]
+    hex_value = hex_data[234:238]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
 
 def hex_to_MPP2(hex_data):
     """Convert hexadecimal MPPT2 to volts."""
-    hex_value = hex_data[234:238]  # Extract the next two bytes after MPP1
+    hex_value = hex_data[250:254]  # Extract the next two bytes after MPP1
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
@@ -110,45 +110,49 @@ def forward_data(data):
 def handle_connection(connection):
     """Handle incoming connections and process data."""
     try:
-        while True:
-            header = connection.recv(HEADER_LENGTH)
-            if len(header) < HEADER_LENGTH:
-                break
+        # Open the file in append mode
+        with open('decrypted_data.log', 'a') as file:
+            while True:
+                header = connection.recv(HEADER_LENGTH)
+                if len(header) < HEADER_LENGTH:
+                    break
 
-            magic, data_size_bytes, unknown, serial_number, iv, timestamp = \
-                header[:6], header[6:10], header[10:14], header[14:30], header[30:46], header[46:52]
+                magic, data_size_bytes, unknown, serial_number, iv, timestamp = \
+                    header[:6], header[6:10], header[10:14], header[14:30], header[30:46], header[46:52]
 
-            if magic.decode() != "POSTGW":
-                logging.error("Invalid magic value.")
-                continue
+                if magic.decode() != "POSTGW":
+                    logging.error("Invalid magic value.")
+                    continue
 
-            data_size = int.from_bytes(data_size_bytes, 'big')
-            data = connection.recv(data_size - 41)
-            crc = connection.recv(2)
-            year, month, day, hour, minute, second = [int(x) for x in timestamp]
+                data_size = int.from_bytes(data_size_bytes, 'big')
+                data = connection.recv(data_size - 41)
+                crc = connection.recv(2)
+                year, month, day, hour, minute, second = [int(x) for x in timestamp]
 
-            response = forward_data(header + data + crc)
-            logging.info(f"Forwarded data, received response: {response.hex()}")
+                response = forward_data(header + data + crc)
+                logging.info(f"Forwarded data, received response: {response.hex()}")
 
-            decrypted_data = decrypt_data(AES_KEY, iv, data)
+                decrypted_data = decrypt_data(AES_KEY, iv, data)
+                logging.info(decrypted_data.hex())
 
-            logging.info(decrypted_data.hex())
+                # Write the decrypted data to the file
+                file.write(decrypted_data.hex() + '\n')
 
-            logging.info("---------------------------------------------------------")
-            logging.info(f"Date-Time: {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
-            logging.info(f"Temperature: {hex_to_celsius(decrypted_data.hex())}°C")
-            logging.info(f"State of Charge: {hex_to_soc(decrypted_data.hex())}%")
-            logging.info(f"Voltage of Battery: {hex_to_battery_volt(decrypted_data.hex())}V")
-            logging.info(f"Grid Voltage L1: {hex_to_grid_volt_l1(decrypted_data.hex())}V")
-            logging.info(f"Grid Voltage L2: {hex_to_grid_volt_l2(decrypted_data.hex())}V")
-            logging.info(f"Grid Voltage L3: {hex_to_grid_volt_l3(decrypted_data.hex())}V")
-            logging.info(f"Backup Voltage L1: {hex_to_backup_volt_l1(decrypted_data.hex())}V")
-            logging.info(f"Backup Voltage L2: {hex_to_backup_volt_l2(decrypted_data.hex())}V")
-            logging.info(f"Backup Voltage L3: {hex_to_backup_volt_l3(decrypted_data.hex())}V")
-            logging.info(f"MPPT1 Voltage: {hex_to_MPP1(decrypted_data.hex())}V")
-            logging.info(f"MPPT2 Voltage: {hex_to_MPP2(decrypted_data.hex())}V")
+                logging.info("---------------------------------------------------------")
+                logging.info(f"Date-Time: {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
+                logging.info(f"Temperature: {hex_to_celsius(decrypted_data.hex())}°C")
+                logging.info(f"State of Charge: {hex_to_soc(decrypted_data.hex())}%")
+                logging.info(f"Voltage of Battery: {hex_to_battery_volt(decrypted_data.hex())}V")
+                logging.info(f"Grid Voltage L1: {hex_to_grid_volt_l1(decrypted_data.hex())}V")
+                logging.info(f"Grid Voltage L2: {hex_to_grid_volt_l2(decrypted_data.hex())}V")
+                logging.info(f"Grid Voltage L3: {hex_to_grid_volt_l3(decrypted_data.hex())}V")
+                logging.info(f"Backup Voltage L1: {hex_to_backup_volt_l1(decrypted_data.hex())}V")
+                logging.info(f"Backup Voltage L2: {hex_to_backup_volt_l2(decrypted_data.hex())}V")
+                logging.info(f"Backup Voltage L3: {hex_to_backup_volt_l3(decrypted_data.hex())}V")
+                logging.info(f"MPPT1 Voltage: {hex_to_MPP1(decrypted_data.hex())}V")
+                logging.info(f"MPPT2 Voltage: {hex_to_MPP2(decrypted_data.hex())}V")
 
-            logging.info("---------------------------------------------------------")
+                logging.info("---------------------------------------------------------")
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
