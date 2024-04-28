@@ -1,6 +1,6 @@
 import socket
 from config import LISTEN_IP, LISTEN_PORT, HEADER_LENGTH, AES_KEY, FORWARD_ENABLED
-from conversion_utils import hex_to_celsius, hex_to_soc, hex_to_battery_volt, hex_to_grid_volt_l1, hex_to_grid_volt_l2, hex_to_grid_volt_l3, hex_to_backup_volt_l1, hex_to_backup_volt_l2, hex_to_backup_volt_l3, hex_to_MPP1, hex_to_MPP2
+from conversion_utils import *
 from networking import forward_data
 from encryption import decrypt_data
 from log_config import setup_logging
@@ -41,17 +41,17 @@ def handle_connection(connection):
 
                 logging.info("---------------------------------------------------------")
                 logging.info(f"Date-Time: {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
-                logging.info(f"Temperature: {hex_to_celsius(decrypted_data.hex())}°C")
-                logging.info(f"State of Charge: {hex_to_soc(decrypted_data.hex())}%")
-                logging.info(f"Voltage of Battery: {hex_to_battery_volt(decrypted_data.hex())}V")
-                logging.info(f"Grid Voltage L1: {hex_to_grid_volt_l1(decrypted_data.hex())}V")
-                logging.info(f"Grid Voltage L2: {hex_to_grid_volt_l2(decrypted_data.hex())}V")
-                logging.info(f"Grid Voltage L3: {hex_to_grid_volt_l3(decrypted_data.hex())}V")
-                logging.info(f"Backup Voltage L1: {hex_to_backup_volt_l1(decrypted_data.hex())}V")
-                logging.info(f"Backup Voltage L2: {hex_to_backup_volt_l2(decrypted_data.hex())}V")
-                logging.info(f"Backup Voltage L3: {hex_to_backup_volt_l3(decrypted_data.hex())}V")
-                logging.info(f"MPPT1 Voltage: {hex_to_MPP1(decrypted_data.hex())}V")
-                logging.info(f"MPPT2 Voltage: {hex_to_MPP2(decrypted_data.hex())}V")
+                logging.info(f"Temperature: {decode_temp_hex(decrypted_data.hex())}°C")
+                logging.info(f"State of Charge: {decode_soc_hex(decrypted_data.hex())}%")
+                logging.info(f"Voltage of Battery: {decode_batt_volt_hex(decrypted_data.hex())}V")
+                logging.info(f"Grid Voltage L1: {decode_grid_volt1_hex(decrypted_data.hex())}V")
+                logging.info(f"Grid Voltage L2: {decode_grid_volt2_hex(decrypted_data.hex())}V")
+                logging.info(f"Grid Voltage L3: {decode_grid_volt3_hex(decrypted_data.hex())}V")
+                logging.info(f"Backup Voltage L1: {decode_backup_volt1_hex(decrypted_data.hex())}V")
+                logging.info(f"Backup Voltage L2: {decode_backup_volt2_hex(decrypted_data.hex())}V")
+                logging.info(f"Backup Voltage L3: {decode_backup_volt3_hex(decrypted_data.hex())}V")
+                logging.info(f"MPPT1 Voltage: {decode_mpp1_volt_hex(decrypted_data.hex())}V")
+                logging.info(f"MPPT2 Voltage: {decode_mpp2_volt_hex(decrypted_data.hex())}V")
 
                 logging.info("---------------------------------------------------------")
 
