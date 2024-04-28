@@ -15,16 +15,19 @@ AES_KEY = b'\xFF' * 16
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 def hex_to_celsius(hex_data):
     """Convert hexadecimal temperature from deci-Celsius to Celsius."""
     hex_value = hex_data[491:494]
     temp_deci_celsius = int(hex_value, 16)
     return temp_deci_celsius / 10
 
+
 def hex_to_soc(hex_data):
     """Convert hexadecimal state of charge to integer percentage."""
     hex_value = hex_data[1238:1242]
     return int(hex_value, 16)
+
 
 def hex_to_battery_volt(hex_data):
     """Convert hexadecimal battery voltage to volts."""
@@ -32,11 +35,13 @@ def hex_to_battery_volt(hex_data):
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
+
 def hex_to_backup_volt_l1(hex_data):
     """Convert hexadecimal grid voltage L1 to volts."""
     hex_value = hex_data[786:790]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
+
 
 def hex_to_backup_volt_l2(hex_data):
     """Convert hexadecimal grid voltage L2 to volts."""
@@ -44,11 +49,13 @@ def hex_to_backup_volt_l2(hex_data):
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
+
 def hex_to_backup_volt_l3(hex_data):
     """Convert hexadecimal grid voltage L3 to volts."""
     hex_value = hex_data[794:798]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
+
 
 def hex_to_grid_volt_l1(hex_data):
     """Convert hexadecimal backup voltage L1 to volts."""
@@ -56,11 +63,13 @@ def hex_to_grid_volt_l1(hex_data):
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
+
 def hex_to_grid_volt_l2(hex_data):
     """Convert hexadecimal backup voltage L2 to volts."""
     hex_value = hex_data[802:806]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
+
 
 def hex_to_grid_volt_l3(hex_data):
     """Convert hexadecimal backup voltage L3 to volts."""
@@ -68,11 +77,27 @@ def hex_to_grid_volt_l3(hex_data):
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
+
+def hex_to_MPP1(hex_data):
+    """Convert hexadecimal MPPT1 to volts."""
+    hex_value = hex_data[250:254]
+    voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
+    return voltage
+
+
+def hex_to_MPP2(hex_data):
+    """Convert hexadecimal MPPT2 to volts."""
+    hex_value = hex_data[234:238]  # Extract the next two bytes after MPP1
+    voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
+    return voltage
+
+
 def decrypt_data(key, iv, data):
     """Decrypt data using AES-CBC."""
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     decryptor = cipher.decryptor()
     return decryptor.update(data) + decryptor.finalize()
+
 
 def forward_data(data):
     """Forward data to predefined IP and port, and return the response."""
@@ -80,6 +105,7 @@ def forward_data(data):
         sock.connect((FORWARD_IP, FORWARD_PORT))
         sock.sendall(data)
         return sock.recv(1024)
+
 
 def handle_connection(connection):
     """Handle incoming connections and process data."""
@@ -106,6 +132,8 @@ def handle_connection(connection):
 
             decrypted_data = decrypt_data(AES_KEY, iv, data)
 
+            logging.info(decrypted_data.hex())
+
             logging.info("---------------------------------------------------------")
             logging.info(f"Date-Time: {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
             logging.info(f"Temperature: {hex_to_celsius(decrypted_data.hex())}°C")
@@ -117,6 +145,8 @@ def handle_connection(connection):
             logging.info(f"Backup Voltage L1: {hex_to_backup_volt_l1(decrypted_data.hex())}V")
             logging.info(f"Backup Voltage L2: {hex_to_backup_volt_l2(decrypted_data.hex())}V")
             logging.info(f"Backup Voltage L3: {hex_to_backup_volt_l3(decrypted_data.hex())}V")
+            logging.info(f"MPPT1 Voltage: {hex_to_MPP1(decrypted_data.hex())}V")
+            logging.info(f"MPPT2 Voltage: {hex_to_MPP2(decrypted_data.hex())}V")
 
             logging.info("---------------------------------------------------------")
 
@@ -124,6 +154,7 @@ def handle_connection(connection):
         logging.error(f"An error occurred: {e}")
     finally:
         connection.close()
+
 
 def listen_on_port():
     """Listen on a specified port and handle connections."""
@@ -138,6 +169,7 @@ def listen_on_port():
                 handle_connection(connection)
         except KeyboardInterrupt:
             logging.info("Server shutting down.")
+
 
 if __name__ == "__main__":
     listen_on_port()
