@@ -32,37 +32,37 @@ def hex_to_battery_volt(hex_data):
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
-def hex_to_grid_volt_l1(hex_data):
+def hex_to_backup_volt_l1(hex_data):
     """Convert hexadecimal grid voltage L1 to volts."""
     hex_value = hex_data[786:790]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
-def hex_to_grid_volt_l2(hex_data):
+def hex_to_backup_volt_l2(hex_data):
     """Convert hexadecimal grid voltage L2 to volts."""
     hex_value = hex_data[790:794]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
-def hex_to_grid_volt_l3(hex_data):
+def hex_to_backup_volt_l3(hex_data):
     """Convert hexadecimal grid voltage L3 to volts."""
     hex_value = hex_data[794:798]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
-def hex_to_backup_volt_l1(hex_data):
+def hex_to_grid_volt_l1(hex_data):
     """Convert hexadecimal backup voltage L1 to volts."""
     hex_value = hex_data[798:802]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
-def hex_to_backup_volt_l2(hex_data):
+def hex_to_grid_volt_l2(hex_data):
     """Convert hexadecimal backup voltage L2 to volts."""
     hex_value = hex_data[802:806]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
     return voltage
 
-def hex_to_backup_volt_l3(hex_data):
+def hex_to_grid_volt_l3(hex_data):
     """Convert hexadecimal backup voltage L3 to volts."""
     hex_value = hex_data[806:810]
     voltage = int.from_bytes(bytes.fromhex(hex_value), byteorder='big') / 10
