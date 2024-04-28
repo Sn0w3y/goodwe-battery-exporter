@@ -1,6 +1,7 @@
 # GoodWe Battery Exporter
 
-This repository contains a way to extract the Values of the TCP-Payload sent to the GoodWe Server.
+This repository contains a way to extract the Values of the TCP-Payload sent to the GoodWe Server. I got exited because of this [Repo](https://github.com/smlx/goodwe-exporters). But because nobody answered my PR for the "Extended Data Version" I jumped right into it aswell :D So thanks and shoutout to @smlx for his work!
+BTW: I found the keys in the .apk of GoodWe aswell as some Hidden Debugging Buttons - Good(we) know this now ;)
 
 ## SEMS MITM Exporter
 
