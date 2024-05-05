@@ -3,7 +3,13 @@ from conversion_utils import *
 from networking import *
 from encryption import *
 from log_config import *
+from vmem import *
+from vprotocol import *
+from goodwe import ET
+from goodwe.protocol import ProtocolResponse
 import logging
+import asyncio
+import inspect
 
 setup_logging()
 
@@ -35,23 +41,28 @@ def handle_connection(connection):
                     logging.info("Skipped Forwarding to GoodWe")
 
                 decrypted_data = decrypt_data(AES_KEY, iv, data)
-
                 file.write(decrypted_data.hex() + '\n')
 
-                logging.info("---------------------------------------------------------")
-                logging.info(f"Date-Time: {day:02}-{month:02}-{2000 + year:04} {hour:02}:{minute:02}:{second:02}")
-                logging.info(f"Temperature: {decode_temp_hex(decrypted_data.hex())}°C")
-                logging.info(f"State of Charge: {decode_soc_hex(decrypted_data.hex())}%")
-                logging.info(f"Voltage of Battery: {decode_batt_volt_hex(decrypted_data.hex())}V")
-                logging.info(f"Grid Voltage L1: {decode_grid_volt1_hex(decrypted_data.hex())}V")
-                logging.info(f"Grid Voltage L2: {decode_grid_volt2_hex(decrypted_data.hex())}V")
-                logging.info(f"Grid Voltage L3: {decode_grid_volt3_hex(decrypted_data.hex())}V")
-                logging.info(f"Backup Voltage L1: {decode_backup_volt1_hex(decrypted_data.hex())}V")
-                logging.info(f"Backup Voltage L2: {decode_backup_volt2_hex(decrypted_data.hex())}V")
-                logging.info(f"Backup Voltage L3: {decode_backup_volt3_hex(decrypted_data.hex())}V")
-                logging.info(f"MPPT1 Voltage: {decode_mpp1_volt_hex(decrypted_data.hex())}V")
-                logging.info(f"MPPT2 Voltage: {decode_mpp2_volt_hex(decrypted_data.hex())}V")
+                vmem = VMem(decrypted_data)
+                #vmem.display_memory()
 
+                inv = ET(None, None)
+                inv._protocol = VProtocol(vmem)
+                asyncio.run(inv.read_device_info())
+                logger.info("Connected to inverter %s, S/N:%s.", inv.model_name, inv.serial_number)
+                instance_vars = {k: v for k, v in inspect.getmembers(inv) if not k.startswith('_') and not inspect.ismethod(v)}
+                logger.info(instance_vars)
+
+                runtime_data = asyncio.run(inv.read_runtime_data())
+
+                logging.info("---------------------------------------------------------")
+                for sensor in inv.sensors():
+                    if sensor.id_ in runtime_data:
+                        #print(f"{sensor.id_}: \t\t {sensor.name} = {runtime_data[sensor.id_]} {sensor.unit}")
+                        value = runtime_data[sensor.id_]
+                        if value == 0 or value == "":
+                            continue
+                        print(f"{sensor.id_:30}: {runtime_data[sensor.id_]} {sensor.unit}")
                 logging.info("---------------------------------------------------------")
 
     except Exception as e:
